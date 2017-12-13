@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>three.js webgl - geometry - vertex colors</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    
+    <style>
+      body {color: #808080;
+            font-family:Monospace;
+            font-size:13px;
+            text-align:center;
+            background-color: #fff;
+            margin: 0px;
+            overflow: hidden;}
+      a {color: #0080ff;}
+    </style>
+</head>
+
+
+<body>
+    <button id="playBut">play</button>
+    <button id="pauseBut">pause</button>&nbsp;&nbsp;&nbsp;
+    <input id="audio_file" type="file" accept="audio/*" />
+
+    <div id="container"></div>
+
+    <script src="js/three.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/stats.min.js"></script>
+    <script src="js/DragControls.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="js/soundBH.js"></script>
+
+<script>
+
+   
+jQuery(document).ready(function($) {
+    
+    var container, stats;
+    var camera, scene, renderer;
+    var mesh, group1, group2, group3, light;
+    var mouseX = 0, mouseY = 0;
+    var delta = 0, dist;
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
+    var toDrag = [];
+    var velocity = new THREE.Vector3();
+    var direction = new THREE.Vector3();
+
+    var Sound = new SoundBH("./sound2.mp3",16);
+
+    audio_file.onchange = function(){
+      Sound.change(URL.createObjectURL(this.files[0]));
+      console.log("changed!!");
+    };
+
+    playBut.onclick = function(){ Sound.play();};  
+    pauseBut.onclick = function(){ Sound.pause();};
+    
+// visualization code
+
+const CUBES_NUM = 70;
+const STEP = 16;
+const NO_SIGNAL = 140;
+
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 1, 10000);
+camera.position.z = 1800;
+
+    //light
+    var ambientLight = new THREE.AmbientLight(0xcccccc);
+    scene.add(ambientLight);
+
+    var directionalLight = new THREE.DirectionalLight(0xffffff);
+    directionalLight.position.set(2, 2, 0.5).normalize();
+    directionalLight.intensity = 0.75;
+    scene.add(directionalLight);
+
+    //renderer
+    var renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+    //shape
+    geometry = new THREE.OctahedronBufferGeometry(30, 0);
+
+    //material
+    material = new THREE.MeshNormalMaterial(  );
+    
+    //shape + material
+    mesh1 = new THREE.Mesh(geometry, material);
+    mesh1.position.x = -200;
+    mesh1.rotation.x = 0;
+    mesh1.name = "mesh1";
+    scene.add(mesh1);
+    toDrag.push(mesh1);
+
+    mesh2 = new THREE.Mesh(geometry, material);
+    mesh2.position.x = 0;
+    mesh2.rotation.x = 0;
+    mesh2.name = "mesh2";
+    scene.add(mesh2);
+    toDrag.push(mesh2);
+
+    mesh3 = new THREE.Mesh(geometry, material);
+    mesh3.position.x = 200;
+    mesh3.rotation.x = 0;
+    mesh3.name = "mesh3";
+    scene.add(mesh3);
+    toDrag.push(mesh3);
+    
+var floorGeometry = new THREE.PlaneGeometry( 80000, 80000, 100, 100 );
+    floorGeometry.rotateX( - Math.PI / 2 );
+    for ( var i = 0, l = floorGeometry.vertices.length; i < l; i ++ ) {
+      var vertex = floorGeometry.vertices[ i ];
+      vertex.x += Math.random() * 20 - 10;
+      vertex.y += Math.random() * -500 - 300;
+      vertex.z += Math.random() * -85 ;
+    }
+
+    for ( var i = 0, l = floorGeometry.faces.length; i < l; i ++ ) {
+      var face = floorGeometry.faces[ i ];
+      face.vertexColors[ 0 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+      face.vertexColors[ 1 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+      face.vertexColors[ 2 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+    }
+    
+    var floorMaterial = new THREE.MeshBasicMaterial( { vertexColors: THREE.VertexColors } );
+    
+    var floor = new THREE.Mesh( floorGeometry, floorMaterial );
+        scene.add( floor );
+
+
+    //drag and change music
+    var selectedMesh = "mesh2";
+    var dragControls = new THREE.DragControls( toDrag, camera, renderer.domElement );
+      //드래그를 시작할때의 이벤트를 캐치
+      //addEventListener는 이벤트를 세팅하는 또 다른 방식
+      //dragControls.ondragstart = function(){ 내용 }과 비슷한 표현, 더 고급 
+      dragControls.addEventListener( 'dragstart', function (e) {
+      //자 드래그를 시작하면 e라는 이름으로 드래그한 객체가 전달된다. e를 콘솔에 찍어보면
+      //어떤 객체이고 어떤 값을 사용할 수 있는지 알 수 있다.
+          console.log(e);
+      });
+
+      //드래그를 끝냈을 때 사운드를 바꾸고, 볼륨값도 조절하자.
+      //dragControls.addEventListener('dragend', function(e){})
+      //요기서의 function(e){}의 내용이 바로 드래그가 끝나면 실행되는 내용
+      dragControls.addEventListener( 'dragend', function (e) {
+        
+        //아까 메쉬마다 이름을 지정해두었기때문에,
+        //만약 이름이 mesh1이면,
+        if(e.object.name == "mesh1"){
+
+          //지금 재생하는 거랑 같은거면 사운드 안바꾸고 만약 다른거면 바꾼다.
+          if(e.object.name != selectedMesh){
+            Sound.change("sound1.mp3");
+            //그에맞게 로테이션 스피드도 조절
+            speed1 = 0.04; speed2 = 0.01; speed3 = 0.01;  
+          }
+          //Sound.vol(볼륨값)함수로 볼륨을 조절한다.
+          //볼륨값은 0과1 사이여야 한다. 
+          //지금 재생하는 사운드의 볼륨감을 조절한다. y를 -200에서 200사이로만 
+          //드래그할 수 있게 세팅했으므로 -200일때 0, 0일때 0.5, 200일 때 1
+          //이 될 수 있도록 계산식을 짠다. 
+          Sound.vol( (e.object.position.y + 200) / 400);
+
+          //마지막으로 지금 재생하고 있는 메쉬가 무엇인지 저장해두어야 
+          //다음번에 다시 비교할 수 있다.
+          selectedMesh = "mesh1";
+        }else if(e.object.name == "mesh2"){
+          if(e.object.name != selectedMesh){
+            Sound.change("sound2.mp3");
+            speed1 = 0.01; speed2 = 0.04; speed3 = 0.01;
+          }
+          Sound.vol( (e.object.position.y + 200) / 400);
+          selectedMesh = "mesh2";
+        }else if(e.object.name == "mesh3"){
+          if(e.object.name != selectedMesh){
+            Sound.change("sound3.mp3");
+            speed1 = 0.04; speed2 = 0.01; speed3 = 0.01;
+          }
+          Sound.vol( (e.object.position.y + 200) / 400);
+          selectedMesh = "mesh3";
+        }
+
+        console.log(e.object.position);
+      });
+  
+
+    //mousemove
+    function onDocumentMouseMove( event ) {
+      mouseX = ( event.clientX - windowHalfX );
+      mouseY = ( event.clientY - windowHalfY );
+    }
+
+    var speed1 = 0.01;
+    var speed2 = 0.01;
+    var speed3 = 0.01;
+
+    function render() {
+      requestAnimationFrame(render);
+
+      mesh1.rotation.x += speed1;
+      mesh1.rotation.y += speed1;
+      mesh2.rotation.x += speed2;
+      mesh2.rotation.y += speed2;
+      mesh3.rotation.x += speed3;
+      mesh3.rotation.y += speed3;
+
+      for (let i = 0, n = 0; i < toDrag.length; i++, n+=STEP) {
+
+          toDrag[i].scale.y -= 0.85;
+          toDrag[i].scale.y += Sound.getGain() / ( NO_SIGNAL * 25 );
+            console.log(Sound.getGain());
+          toDrag[i].scale.x -= 0.85;
+          toDrag[i].scale.x += Sound.getGain() / ( NO_SIGNAL * 25);
+
+        if (toDrag[i].scale.x <= 1) {
+          toDrag[i].scale.y = 1;
+          toDrag[i].scale.x = 1;
+        }
+
+        //마우스를 y축으로만 드래그할 수 있도록 x와 z축은 고정
+        toDrag[0].position.x = -200;
+        toDrag[1].position.x = 0;
+        toDrag[2].position.x = 200;
+        toDrag[0].position.z = 0;
+        toDrag[1].position.z = 0;
+        toDrag[2].position.z = 0;
+
+        //볼륨값을 정확하게 조절할 수 있도록 드래그 최대치를 200까지만 설정
+        if(toDrag[i].position.y > 200){ toDrag[i].position.y = 200};
+        if(toDrag[i].position.y < -200){ toDrag[i].position.y = -200};
+      }
+
+      delta += 0.006;
+      dist = 8;
+
+      camera.position.x += ( mouseX - camera.position.x) * 0.1;
+      camera.position.y += (- mouseY - camera.position.y) * 0.1;
+    
+      camera.lookAt(scene.position);
+      renderer.render(scene, camera);
+    }
+
+    render();
+
+  var windowHalfX = window.innerWidth / 2;
+  var windowHalfY = window.innerHeight / 2;
+  
+  function onWindowResize() {
+    windowHalfX = window.innerWidth / 2;
+    windowHalfY = window.innerHeight / 2;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  window.addEventListener("resize", onWindowResize, false);
+});
+
+
+</script>
+
+
+<style>
+
+body {
+  margin: 0;
+  background: #fff;
+}
+
+</style>
