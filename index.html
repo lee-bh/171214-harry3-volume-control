@@ -212,17 +212,26 @@ var floorGeometry = new THREE.PlaneGeometry( 80000, 80000, 100, 100 );
       mesh3.rotation.y += speed3;
 
       for (let i = 0, n = 0; i < toDrag.length; i++, n+=STEP) {
-
+          
+          
           toDrag[i].scale.y -= 0.85;
           toDrag[i].scale.y += Sound.getGain() / ( NO_SIGNAL * 25 );
-            console.log(Sound.getGain());
+            
           toDrag[i].scale.x -= 0.85;
           toDrag[i].scale.x += Sound.getGain() / ( NO_SIGNAL * 25);
 
-        if (toDrag[i].scale.x <= 1) {
-          toDrag[i].scale.y = 1;
-          toDrag[i].scale.x = 1;
-        }
+          console.log(toDrag[i].scale.y);
+
+          //지금 사운드에 비례해서 스케일을 키우면서 또한 지속적으로 0.85라는 값을 빼줘서 다시 원점으로 돌아가게 하고 있는데, 사운드가 지속적으로 소리가 크면 0.85를 계속 빼줘도 값이 원점으로 돌아가지 않고 계속 커지는 현상이 발생한다.
+          //스케일 값이 너무 크면, (이 값은 콘솔을 통해서 적당한 값을 체크해야한다.) 1로 리셋되도록 수정
+          if(toDrag[i].scale.y > 8){
+            toDrag[i].scale.x = toDrag[i].scale.y = 1;
+          } 
+
+          if (toDrag[i].scale.x <= 1) {
+            toDrag[i].scale.y = 1;
+            toDrag[i].scale.x = 1;
+          }
 
         //마우스를 y축으로만 드래그할 수 있도록 x와 z축은 고정
         toDrag[0].position.x = -200;
