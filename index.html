@@ -161,13 +161,6 @@ var floorGeometry = new THREE.PlaneGeometry( 80000, 80000, 100, 100 );
             //그에맞게 로테이션 스피드도 조절
             speed1 = 0.04; speed2 = 0.01; speed3 = 0.01;  
           }
-          //Sound.vol(볼륨값)함수로 볼륨을 조절한다.
-          //볼륨값은 0과1 사이여야 한다. 
-          //지금 재생하는 사운드의 볼륨감을 조절한다. y를 -200에서 200사이로만 
-          //드래그할 수 있게 세팅했으므로 -200일때 0, 0일때 0.5, 200일 때 1
-          //이 될 수 있도록 계산식을 짠다. 
-          Sound.vol( (e.object.position.y + 200) / 400);
-
           //마지막으로 지금 재생하고 있는 메쉬가 무엇인지 저장해두어야 
           //다음번에 다시 비교할 수 있다.
           selectedMesh = "mesh1";
@@ -176,18 +169,23 @@ var floorGeometry = new THREE.PlaneGeometry( 80000, 80000, 100, 100 );
             Sound.change("sound2.mp3");
             speed1 = 0.01; speed2 = 0.04; speed3 = 0.01;
           }
-          Sound.vol( (e.object.position.y + 200) / 400);
           selectedMesh = "mesh2";
         }else if(e.object.name == "mesh3"){
           if(e.object.name != selectedMesh){
             Sound.change("sound3.mp3");
-            speed1 = 0.04; speed2 = 0.01; speed3 = 0.01;
+            speed1 = 0.01; speed2 = 0.01; speed3 = 0.04;
           }
-          Sound.vol( (e.object.position.y + 200) / 400);
           selectedMesh = "mesh3";
         }
-
-        console.log(e.object.position);
+        
+          //Sound.vol(볼륨값)함수로 볼륨을 조절한다.
+          //어떤 오브젝트인지는 상관없다. 이미 앞의 식에서처리했기때문에
+          //볼륨값은 0과1 사이여야 한다. 
+          //지금 재생하는 사운드의 볼륨감을 조절한다. y를 -200에서 200사이로만 
+          //드래그할 수 있게 세팅했으므로 -200일때 0, 0일때 0.5, 200일 때 1
+          //이 될 수 있도록 계산식을 짠다. 
+          Sound.vol( (e.object.position.y + 200) / 400);
+          console.log(e.object.position);
       });
   
 
